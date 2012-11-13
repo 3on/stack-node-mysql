@@ -28,21 +28,34 @@ app.get("/", function(req, res){
     });
 });
 
-// Connect to MySQL
-db.connect(function(err) {
-    if (err) throw err;
 
-    // Create a db if needed
-    db.query('CREATE DATABASE IF NOT EXISTS test', function(err) {
-        if (err) throw err;
-        // Connect to the DB test
-        db.query('USE test', function(err){
+// Connect to MySQL
+
+var tries = 20;
+function start() {
+    db.connect(function(err) {
+        if (err) {
+            if(err.code == 'ECONNREFUSED' && tries){
+                tries--;
+                setTimeout(start, 1000);
+                return;
+            }
+            throw err;
+        }
+
+        // Create a db if needed
+        db.query('CREATE DATABASE IF NOT EXISTS test', function(err) {
             if (err) throw err;
-            // Create a table if needed
-             db.query('CREATE TABLE IF NOT EXISTS test', function(err) {
-                app.listen(8080);
+            // Connect to the DB test
+            db.query('USE test', function(err){
+                if (err) throw err;
+                // Create a table if needed
+                 db.query('CREATE TABLE IF NOT EXISTS test', function(err) {
+                    app.listen(8080);
+                });
+                
             });
-            
         });
-    });
-});
+    }); 
+}
+start();
